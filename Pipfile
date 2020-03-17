@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+awscli = "*"
+aws-sam-cli = "*"
+stacker = "*"
+invoke = "*"
+stacker-blueprints = "*"
+troposphere-mate = "*"
+troposphere = "*"
+
+[requires]
+python_version = "3.7"

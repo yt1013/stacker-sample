@@ -1,0 +1,20 @@
+---
+namespace: ${namespace}-${account}
+
+sys_path: .
+
+stacks:
+  - name: S3
+    class_path: blueprints.s3.S3
+    variables:
+      ProjectId: ${ProjectId}
+      Environment: ${Environment}
+      FrontBucketName: ${FrontBucketName}
+  - name: CloudFront
+    class_path: blueprints.cloudfront.CloudFront
+    variables:
+      ProjectId: ${ProjectId}
+      Environment: ${Environment}
+      FrontBucketName: ${output S3::FrontBucketName}
+      WeatherBucketName: ${output S3::WeatherBucketName}
+      LaravelAssetsBucketName: ${output S3::LaravelAssetsBucketName}
