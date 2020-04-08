@@ -10,7 +10,7 @@ class S3(Blueprint):
         'Environment': {
             'type': str
         },
-        'FrontBucketName': {
+        'AssetsBucketName': {
             'type': str
         }
     }
@@ -19,36 +19,16 @@ class S3(Blueprint):
         var = self.get_variables()
         project_id = var.get('ProjectId')
         environment = var.get('Environment')
-        front_bucket_name = var.get('FrontBucketName')
+        assets_bucket_name = var.get('AssetsBucketName')
 
         self.template.description = 'S3 Bucket Stack'
 
         # Front S3 Bucket
-        front_bucket = self.template.add_resource(
+        assets_bucket = self.template.add_resource(
             s3.Bucket(
-                'FrontBucket',
-                BucketName=Join('-', [front_bucket_name, Ref(AWS_ACCOUNT_ID)]),
+                'AssetsBucket', #primary name
+                BucketName=Join('-', [assets_bucket_name, Ref(AWS_ACCOUNT_ID)]),
+                DeletionPolicy=Retain
             )
         )
-        sample2_bucket = self.template.add_resource(
-            s3.Bucket(
-                'WeatherBucket',
-                BucketName=Join('-', ['sample2', Ref(AWS_ACCOUNT_ID)]),
-            )
-        )
-        sample3_bucket = self.template.add_resource(
-            s3.Bucket(
-                'LaravelAssetsBucket',
-                BucketName=Join('-', ['sample3', Ref(AWS_ACCOUNT_ID)]),
-            )
-        )
-        sample4_bucket = self.template.add_resource(
-            s3.Bucket(
-                'FromKajimaBucket',
-                BucketName=Join('-', ['sample4', Ref(AWS_ACCOUNT_ID)]),
-            )
-        )
-        self.template.add_output(Output('FrontBucketName', Ref(front_bucket)))
-        self.template.add_output(Output('WeatherBucketName', Ref(sample2_bucket)))
-        self.template.add_output(Output('LaravelAssetsBucketName', Ref(sample3_bucket)))
-        self.template.add_output(Output('FromKajimaBucketName', Ref(sample4_bucket)))
+        self.template.add_output(Output('AssetsBucketName', Ref(assets_bucket)))

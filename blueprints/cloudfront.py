@@ -11,26 +11,14 @@ class CloudFront(Blueprint):
         'Environment': {
             'type': str
         },
-        'FrontBucketName':{
+        'AssetsBucketName':{
             'type': str
         },
-        'WeatherBucketName': {
-            'type': str
-        },
-        'LaravelAssetsBucketName': {
-            'type': str
-        }
     }
 
     @property
-    def front_bucket_name(self):
-        return self.get_variables()['FrontBucketName']
-    @property
-    def weather_bucket_name(self):
-        return self.get_variables()['WeatherBucketName']
-    @property
-    def larvel_assets_bucket_name(self):
-        return self.get_variables()['LaravelAssetsBucketName']
+    def assets_bucket_name(self):
+        return self.get_variables()['AssetsBucketName']
 
     def create_s3_oai(self) -> cf.CloudFrontOriginAccessIdentity:
         return self.template.add_resource(
@@ -79,17 +67,8 @@ class CloudFront(Blueprint):
                 QueryString=False
             ),
         )
-    def create_cache_behavior(self, bucket_name, path) -> cf.CacheBehavior:
-        return cf.CacheBehavior(
-            TargetOriginId=f'S3Origin-{bucket_name}',
-            ViewerProtocolPolicy='redirect-to-https',
-            PathPattern=path,
-            ForwardedValues=cf.ForwardedValues(
-                QueryString=False
-            ),
-        )
 
-    def create_cloudfront_distribution(self, s3_origin, default_cache_behavior: cf.DefaultCacheBehavior, cache_behavior):
+    def create_cloudfront_distribution(self, s3_origin, default_cache_behavior: cf.DefaultCacheBehavior):
         self.template.add_resource(
             cf.Distribution(
                 'CloudFrontDistribution',
@@ -98,7 +77,6 @@ class CloudFront(Blueprint):
                     DefaultRootObject='index.html',
                     Origins=s3_origin,
                     DefaultCacheBehavior=default_cache_behavior,
-                    CacheBehaviors=cache_behavior,
                 )
             )
         )
@@ -107,19 +85,14 @@ class CloudFront(Blueprint):
         self.template.description = 'CloudFront Stack'
 
         bucket_names = {
-            'Front': self.front_bucket_name,
-            'Weather': self.weather_bucket_name,
-            'Assets': self.larvel_assets_bucket_name
+            'Assets': self.assets_bucket_name
         }
 
         s3_origin = []
-        cache_behavior = []
 
         front_s3_oai = self.create_s3_oai()
         for bucket_key, bucket_name in bucket_names.items():
             self.create_s3_bucket_policy(bucket_key, bucket_name, front_s3_oai)
             s3_origin.append(self.create_cloudfront_s3_origin(bucket_name, front_s3_oai))
-        default_cache_behavior = self.create_default_cache_behavior(self.front_bucket_name)
-        cache_behavior.append(self.create_cache_behavior(self.weather_bucket_name, '/weather/*'))
-        cache_behavior.append(self.create_cache_behavior(self.larvel_assets_bucket_name, '/laravel-assets/*'))
-        self.create_cloudfront_distribution(s3_origin, default_cache_behavior, cache_behavior)
+        default_cache_behavior = self.create_default_cache_behavior(self.assets_bucket_name)
+        self.create_cloudfront_distribution(s3_origin, default_cache_behavior)
